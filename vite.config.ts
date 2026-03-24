@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      base: '/Clinica/', // <-- ¡Esta es la línea que GitHub Pages necesita!
       server: {
         port: 3000,
         host: '0.0.0.0',
