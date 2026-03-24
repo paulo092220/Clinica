@@ -1,0 +1,25 @@
+{
+  "users": [
+    { "id": "admin-01", "name": "Admin Principal", "role": "Administrador Clínico", "roleType": "ADMIN", "avatar": "https://picsum.photos/seed/admin/100/100", "color": "bg-slate-900", "password": "5606" },
+    { "id": "doc-01", "name": "Dr. Ricardo Silva", "role": "Estomatólogo General", "roleType": "DENTIST", "avatar": "https://picsum.photos/seed/doc1/100/100", "color": "bg-sky-600", "password": "456" },
+    { "id": "doc-02", "name": "Dra. Elena Martínez", "role": "Ortodoncista", "roleType": "DENTIST", "avatar": "https://picsum.photos/seed/doc2/100/100", "color": "bg-indigo-600", "password": "789" }
+  ],
+  "appointments": [],
+  "patients": [],
+  "services": [],
+  "investments": [
+    { "id": "inv-entry-01", "date": "2024-01-01", "concept": "Mano de obra (Instalaciones)", "amountCUP": 5000, "amountUSD": 0, "notes": "Pago inicial por mano de obra de remodelación" }
+  ],
+  "commissions": [],
+  "fixedExpenses": [],
+  "otherExpenses": [],
+  "distributionConfig": {
+    "doctorCommission": 25,
+    "funds": [
+      { "id": "f1", "name": "Recuperación Inversión", "percentage": 40, "color": "#0ea5e9" },
+      { "id": "f2", "name": "Operación y Gastos", "percentage": 20, "color": "#64748b" },
+      { "id": "f3", "name": "Socio Inversor", "percentage": 15, "color": "#f59e0b" },
+      { "id": "f4", "name": "Fondo de Emergencia", "percentage": 25, "color": "#ef4444" }
+    ]
+  }
+}
