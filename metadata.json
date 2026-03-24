@@ -1,0 +1,7 @@
+{
+  "name": "Noah’s Agency - Gestión Odontológica",
+  "description": "Una plataforma integral para la gestión de clínicas dentales que incluye gestión de pacientes, agenda inteligente, historial clínico digital y un asistente de diagnóstico potenciado por IA (Gemini).",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
