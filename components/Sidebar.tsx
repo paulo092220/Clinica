@@ -58,6 +58,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentRoute, onNavigate, isOpen, onC
             </div>
             <span className="text-xl font-bold text-slate-800 tracking-tight">Noah’s <span className="text-sky-600">Agency</span></span>
           </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+          >
+            <Icons.X />
+          </button>
         </div>
         
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">

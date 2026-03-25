@@ -16,6 +16,7 @@ import PatientModal from './components/PatientModal';
 import CheckoutModal from './components/CheckoutModal';
 import Login from './components/Login';
 import { AppRoute, Appointment, Patient, TreatmentRecord, CommissionEntry, Service, PerformedService, FixedExpense, GalleryItem, UserRole, User, Currency, DistributionConfig, InventoryItem, Investment } from './types';
+import { Icons } from './constants';
 import { saveDirectoryHandle, loadDirectoryHandle, verifyPermission } from './utils/storage';
 
 const STORAGE_KEY = 'noahs_agency_data_v4';
@@ -547,6 +548,22 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900">
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 px-4 flex items-center justify-between shadow-sm">
+        <div className="flex items-center space-x-3">
+          <div className={`w-8 h-8 ${activeUser.color} rounded-lg flex items-center justify-center text-white shadow-md`}>
+            <Icons.Stethoscope />
+          </div>
+          <span className="text-lg font-bold text-slate-800 tracking-tight">Noah’s <span className="text-sky-600">Agency</span></span>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600"
+        >
+          <Icons.Menu />
+        </button>
+      </header>
+
       <Sidebar 
         currentRoute={currentRoute} 
         onNavigate={setCurrentRoute} 
