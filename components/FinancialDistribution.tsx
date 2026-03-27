@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Investment, FixedExpense, Appointment, CommissionEntry, User, Patient, DistributionConfig } from '../types';
 import { Icons } from '../constants';
 
@@ -11,6 +11,7 @@ interface FinancialDistributionProps {
   activeUser: User;
   patients: Patient[];
   distributionConfig: DistributionConfig;
+  onUpdateConfig: (config: DistributionConfig) => void;
 }
 
 const FinancialDistribution: React.FC<FinancialDistributionProps> = ({ 
@@ -20,8 +21,33 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
   commissions,
   activeUser,
   patients,
-  distributionConfig
+  distributionConfig,
+  onUpdateConfig
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempConfig, setTempConfig] = useState<DistributionConfig>(distributionConfig);
+  
+  // Filtro de fechas
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const handleSaveConfig = () => {
+    const total = tempConfig.investmentRecovery + tempConfig.operatingCosts + tempConfig.investorPartner + tempConfig.doctorCommission;
+    if (total !== 100) {
+      alert(`La suma de los porcentajes debe ser exactamente 100%. Actual: ${total}%`);
+      return;
+    }
+    onUpdateConfig(tempConfig);
+    setIsEditing(false);
+  };
+
+  const isWithinRange = (date: string) => {
+    if (!startDate && !endDate) return true;
+    if (startDate && date < startDate) return false;
+    if (endDate && date > endDate) return false;
+    return true;
+  };
+
   // 1. Calcular Ingresos Totales (Tratamientos + Reservas)
   const totals = useMemo(() => {
     let cup = 0;
@@ -30,39 +56,58 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
     // Sumar todos los tratamientos realizados
     patients.forEach(p => {
       p.history.forEach(h => {
-        cup += h.amountPaidCUP || 0;
-        usd += h.amountPaidUSD || 0;
+        if (isWithinRange(h.date)) {
+          cup += h.amountPaidCUP || 0;
+          usd += h.amountPaidUSD || 0;
+        }
       });
     });
 
     // Sumar las reservas de citas no canceladas
     appointments.forEach(a => {
-      if (a.status !== 'cancelled') {
+      if (a.status !== 'cancelled' && isWithinRange(a.date)) {
         cup += a.reservationFeeCUP || 0;
         usd += a.reservationFeeUSD || 0;
       }
     });
 
     return { cup, usd };
-  }, [patients, appointments]);
+  }, [patients, appointments, startDate, endDate]);
 
-  // 2. Calcular Inversión Inicial Total
+  // 2. Calcular Inversión Inicial Total (Global)
   const totalInvestment = useMemo(() => {
-    return investments.reduce((acc, inv) => {
-      acc.cup += inv.amountCUP;
-      acc.usd += inv.amountUSD;
+    const invTotal = investments.reduce((acc, inv) => {
+      if (isWithinRange(inv.date)) {
+        acc.cup += inv.amountCUP;
+        acc.usd += inv.amountUSD;
+      }
       return acc;
     }, { cup: 0, usd: 0 });
-  }, [investments]);
+
+    const expTotal = fixedExpenses.reduce((acc, exp) => {
+      if (isWithinRange(exp.date)) {
+        acc.cup += exp.amountCUP;
+        acc.usd += exp.amountUSD;
+      }
+      return acc;
+    }, { cup: 0, usd: 0 });
+
+    return {
+      cup: invTotal.cup + expTotal.cup,
+      usd: invTotal.usd + expTotal.usd
+    };
+  }, [investments, fixedExpenses, startDate, endDate]);
 
   // 3. Calcular Gastos Totales Realizados
   const totalExpenses = useMemo(() => {
     return fixedExpenses.reduce((acc, exp) => {
-      acc.cup += exp.amountCUP;
-      acc.usd += exp.amountUSD;
+      if (isWithinRange(exp.date)) {
+        acc.cup += exp.amountCUP;
+        acc.usd += exp.amountUSD;
+      }
       return acc;
     }, { cup: 0, usd: 0 });
-  }, [fixedExpenses]);
+  }, [fixedExpenses, startDate, endDate]);
 
   // 4. Distribución según porcentajes configurados
   const distribution = useMemo(() => {
@@ -96,10 +141,141 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      <header>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Distribución Financiera</h1>
-        <p className="text-slate-500 font-medium">Análisis de rentabilidad y reparto de dividendos estratégicos.</p>
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Distribución Financiera</h1>
+          <p className="text-slate-500 font-medium">Análisis de rentabilidad y reparto de dividendos estratégicos.</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="flex flex-col px-2">
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Desde</span>
+              <input 
+                type="date" 
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="text-xs font-bold text-slate-700 outline-none bg-transparent"
+              />
+            </div>
+            <div className="w-px h-8 bg-slate-100"></div>
+            <div className="flex flex-col px-2">
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hasta</span>
+              <input 
+                type="date" 
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="text-xs font-bold text-slate-700 outline-none bg-transparent"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button 
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                title="Limpiar filtros"
+              >
+                <Icons.X />
+              </button>
+            )}
+          </div>
+
+          <button 
+            onClick={() => {
+              setTempConfig(distributionConfig);
+              setIsEditing(!isEditing);
+            }}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              isEditing ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Icons.Settings />
+            {isEditing ? 'Cancelar' : 'Configurar %'}
+          </button>
+        </div>
       </header>
+
+      {isEditing && (
+        <div className="bg-white p-8 rounded-[2.5rem] border-2 border-sky-500 shadow-xl animate-slideDown space-y-6">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl"><Icons.ChartBar /></div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900">Configuración de Reparto</h3>
+              <p className="text-xs text-slate-500">Ajuste los porcentajes de distribución de ingresos brutos.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recuperación Inv.</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={tempConfig.investmentRecovery}
+                  onChange={e => setTempConfig({...tempConfig, investmentRecovery: Number(e.target.value)})}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-slate-900 outline-none focus:ring-4 focus:ring-sky-500/10 transition-all"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gastos Operativos</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={tempConfig.operatingCosts}
+                  onChange={e => setTempConfig({...tempConfig, operatingCosts: Number(e.target.value)})}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-slate-900 outline-none focus:ring-4 focus:ring-sky-500/10 transition-all"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Socio Inversor</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={tempConfig.investorPartner}
+                  onChange={e => setTempConfig({...tempConfig, investorPartner: Number(e.target.value)})}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-slate-900 outline-none focus:ring-4 focus:ring-sky-500/10 transition-all"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Comisión Doctores</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={tempConfig.doctorCommission}
+                  onChange={e => setTempConfig({...tempConfig, doctorCommission: Number(e.target.value)})}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-slate-900 outline-none focus:ring-4 focus:ring-sky-500/10 transition-all"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-black uppercase tracking-widest ${
+                (tempConfig.investmentRecovery + tempConfig.operatingCosts + tempConfig.investorPartner + tempConfig.doctorCommission) === 100 
+                ? 'text-emerald-600' : 'text-red-500'
+              }`}>
+                Total: {tempConfig.investmentRecovery + tempConfig.operatingCosts + tempConfig.investorPartner + tempConfig.doctorCommission}%
+              </span>
+              {(tempConfig.investmentRecovery + tempConfig.operatingCosts + tempConfig.investorPartner + tempConfig.doctorCommission) !== 100 && (
+                <span className="text-[10px] text-slate-400 italic">(Debe sumar 100%)</span>
+              )}
+            </div>
+            <button 
+              onClick={handleSaveConfig}
+              className="px-8 py-4 bg-sky-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-sky-700 shadow-lg shadow-sky-600/20 transition-all"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* RESUMEN DE INGRESOS */}
       <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
@@ -115,7 +291,9 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
           <div className="flex gap-4">
             <div className="bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
               <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Tratamientos Realizados</p>
-              <p className="text-xl font-black">{patients.reduce((sum, p) => sum + p.history.length, 0)}</p>
+              <p className="text-xl font-black">
+                {patients.reduce((sum, p) => sum + p.history.filter(h => isWithinRange(h.date)).length, 0)}
+              </p>
             </div>
           </div>
         </div>
@@ -131,7 +309,7 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
             </div>
             <div className="text-right">
               <p className="text-2xl font-black text-indigo-600">$ {distribution.investmentRecovery.cup.toLocaleString()}</p>
-              <p className="text-xs font-bold text-slate-400">Acumulado para retorno</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inversión Total Global: $ {totalInvestment.cup.toLocaleString()}</p>
             </div>
           </div>
 
@@ -147,7 +325,7 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
               ></div>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <p className="text-xs font-bold text-slate-500 italic">Inversión Total: $ {totalInvestment.cup.toLocaleString()} CUP</p>
+              <p className="text-xs font-bold text-slate-500 italic">Acumulado para retorno</p>
               {recoveryProgressCUP >= 100 ? (
                 <span className="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-1 rounded-lg">¡Inversión Recuperada!</span>
               ) : (
@@ -259,16 +437,18 @@ const FinancialDistribution: React.FC<FinancialDistributionProps> = ({
                   // Sumar desde tratamientos
                   patients.forEach(p => {
                     p.history.forEach(h => {
-                      const doc = h.doctor || 'Sin asignar';
-                      if (!acc[doc]) acc[doc] = { cup: 0, usd: 0 };
-                      acc[doc].cup += h.amountPaidCUP || 0;
-                      acc[doc].usd += h.amountPaidUSD || 0;
+                      if (isWithinRange(h.date)) {
+                        const doc = h.doctor || 'Sin asignar';
+                        if (!acc[doc]) acc[doc] = { cup: 0, usd: 0 };
+                        acc[doc].cup += h.amountPaidCUP || 0;
+                        acc[doc].usd += h.amountPaidUSD || 0;
+                      }
                     });
                   });
 
                   // Sumar desde reservas
                   appointments.forEach(a => {
-                    if (a.status !== 'cancelled' && (a.reservationFeeCUP > 0 || a.reservationFeeUSD > 0)) {
+                    if (a.status !== 'cancelled' && (a.reservationFeeCUP > 0 || a.reservationFeeUSD > 0) && isWithinRange(a.date)) {
                       const doc = a.doctorName || 'Sin asignar';
                       if (!acc[doc]) acc[doc] = { cup: 0, usd: 0 };
                       acc[doc].cup += a.reservationFeeCUP || 0;
