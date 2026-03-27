@@ -22,7 +22,8 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({ isOpen, onClose, inve
     paymentMethod: 'Efectivo',
     services: [],
     suppliesUsed: [],
-    followUpTreatment: ''
+    followUpTreatment: '',
+    appointmentCreatedAt: ''
   });
 
   const [searchTermInventory, setSearchTermInventory] = useState('');
@@ -65,7 +66,8 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({ isOpen, onClose, inve
     // Fix: Ensure the record has an ID before confirming
     const recordWithId: TreatmentRecord = {
       ...formData,
-      id: formData.id || Math.random().toString(36).substr(2, 9)
+      id: formData.id || Math.random().toString(36).substr(2, 9),
+      appointmentCreatedAt: formData.appointmentCreatedAt || undefined
     };
     onConfirm(recordWithId);
     onClose();
@@ -81,7 +83,8 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({ isOpen, onClose, inve
       paymentMethod: 'Efectivo',
       services: [],
       suppliesUsed: [],
-      followUpTreatment: ''
+      followUpTreatment: '',
+      appointmentCreatedAt: ''
     });
   };
 
@@ -147,7 +150,18 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({ isOpen, onClose, inve
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 uppercase">Método de Pago</label>
+              <label className="text-xs font-bold text-slate-700 uppercase">Fecha de Agendamiento (Opcional)</label>
+              <input 
+                type="datetime-local" 
+                value={formData.appointmentCreatedAt}
+                onChange={e => setFormData({...formData, appointmentCreatedAt: e.target.value})}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700 uppercase">Método de Pago</label>
               <select 
                 value={formData.paymentMethod}
                 onChange={e => setFormData({...formData, paymentMethod: e.target.value as PaymentMethod})}
@@ -158,7 +172,6 @@ const AddHistoryModal: React.FC<AddHistoryModalProps> = ({ isOpen, onClose, inve
                 <option value="Transferencia">Transferencia</option>
               </select>
             </div>
-          </div>
 
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 uppercase">Tratamiento Posterior</label>

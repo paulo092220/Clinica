@@ -47,6 +47,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Tarjeta' | 'Transferencia'>('Efectivo');
   const [paidCurrency, setPaidCurrency] = useState<Currency>('CUP');
   const [searchTermInventory, setSearchTermInventory] = useState('');
+  const [manualAppointmentCreatedAt, setManualAppointmentCreatedAt] = useState('');
 
   const financialStats = useMemo(() => {
     return (patient.history || []).reduce((acc, record) => {
@@ -131,7 +132,8 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
       paidCurrency,
       paymentMethod,
       services: billServices,
-      suppliesUsed: billSupplies
+      suppliesUsed: billSupplies,
+      appointmentCreatedAt: manualAppointmentCreatedAt || undefined
     };
 
     onAddHistory?.(patient.id, newRecord);
@@ -140,6 +142,7 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
     setBillSupplies([]);
     setExtraCharge({ amount: 0, reason: '' });
     setObservations('');
+    setManualAppointmentCreatedAt('');
     setActiveTab('history');
   };
 
@@ -251,6 +254,16 @@ const PatientDetail: React.FC<PatientDetailProps> = ({
                   onChange={e => setObservations(e.target.value)}
                   placeholder="Describa el procedimiento y hallazgos..."
                   className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[2rem] h-40 outline-none focus:ring-4 focus:ring-sky-500/10 transition-all text-sm font-medium"
+                />
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Fecha de Agendamiento (Opcional)</h3>
+                <input 
+                  type="datetime-local" 
+                  value={manualAppointmentCreatedAt}
+                  onChange={e => setManualAppointmentCreatedAt(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-sky-500/10 transition-all text-sm font-medium"
                 />
               </section>
             </div>
