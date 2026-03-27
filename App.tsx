@@ -514,6 +514,7 @@ const App: React.FC = () => {
           activeUser={activeUser}
           patients={patients}
           distributionConfig={distributionConfig}
+          onUpdateConfig={setDistributionConfig}
         />;
       case AppRoute.STATISTICS:
         return <Statistics 
